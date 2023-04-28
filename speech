@@ -1,1 +1,24 @@
 # hello world
+
+import lhotse, os, gzip, shutil
+from lhotse import CutSet, Mfcc, Fbank
+import lhotse.recipes
+from lhotse.audio import Recording, RecordingSet
+from lhotse.recipes.utils import manifests_exist, read_manifests_if_cached
+from lhotse.supervision import AlignmentItem, SupervisionSegment, SupervisionSet
+
+from tqdm.auto import tqdm
+
+from pathlib import Path
+from typing import Dict, List, Optional, Sequence, Tuple, Union
+
+Pathlike = Union[Path, str]
+
+
+def gz_extract(*items):
+    for file in items:
+        gz_name = os.path.abspath(file)
+        file_name = (os.path.basename(gz_name)).rsplit('.',1)[0]
+        with gzip.open(gz_name,"rb") as f_in, open(file_name,"wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+        os.remove(gz_name)
