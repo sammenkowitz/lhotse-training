@@ -23,3 +23,83 @@ def gz_extract(*files):
             shutil.copyfileobj(f_in, f_out)
         os.remove(gz_name)
         
+def prepare_corpora(
+    root_dir: Pathlike,
+    dataset_parts: Union[str, Sequence[str]] = ("first", "second", "third"),
+    output_dir: Optional[Pathlike] = None
+    ) -> Dict[str, Dict[str, Union[RecordingSet, SupervisionSet]]]:
+
+    '''
+    Called with:
+    root_dir = Path("C:\\Users\\samme\\OneDrive\\Documents\\annotation_and_speech_corpora")
+    # num_jobs = os.cpu_count() - 1
+    output_dir = Path("C:\\Users\\samme\\OneDrive\\Documents\\annotation_and_speech_corpora")
+    
+    corpora = prepare_corpora(root_dir=root_dir, output_dir=output_dir,)
+    '''
+    
+    root_dir = Path(root_dir)
+    output_dir = Path(output_dir)
+    assert root_dir.is_dir(), f"No such directory: {root_dir}"
+    assert output_dir.is_dir(), f"No such directory: {output_dir}"
+
+    manifests = {}
+    
+    # redundancy
+    if output_dir is not None:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        manifests = read_manifests_if_cached(
+            dataset_parts=dataset_parts, output_dir=output_dir
+        )
+
+    for part in tqdm(dataset_parts,desc="datasetparts"):
+        
+        recordings = []
+        
+        supervisions = []
+        
+        part_path = root_dir / part
+        
+        futures = []
+        
+        for trans_path in tqdm(part_path.rglob("*.trans.txt"),desc="tpath",leave=False):
+            alignments = {}
+            ali_path = (
+                alignments_dir
+                / trans_path.parent.relative_to(root_dir)
+                / (trans_path.stem.split(".")[0] + ".alignment.txt")
+            )
+            if ali_path.exists():
+                alignments = parse_alignments(ali_path)
+
+        for future in tqdm(futures,desc="futures",leave=False):
+            result = future.result()
+            if result is None:
+                continue
+            recording, segment = result
+            recordings.append(recording)
+            supervisions.append(segment)
+
+        recording_set = RecordingSet.from_recordings(recordings)
+        print(recording_set.recordings.keys())
+        supervision_set = SupervisionSet.from_segments(supervisions)
+
+        #validate_recordings_and_supervisions(recording_set, supervision_set)
+                
+        if output_dir is not None:
+            supervision_set.to_file(
+                output_dir / f"corpus_supervisions_{part}.jsonl.gz"
+            )
+            recording_set.to_file(
+                output_dir / f"corpus_recordings_{part}.jsonl.gz"
+            )
+            
+            gz_extract(f"corpus_supervisions_{part}.jsonl.gz")
+            gz_extract(f"corpus_recordings_{part}.jsonl.gz")
+            
+        manifests[part] = {
+            "recordings": recording_set,
+            "supervisions": supervision_set,
+        }
+    
+    return manifests
