@@ -55,11 +55,8 @@ def prepare_corpora(
     for part in tqdm(dataset_parts,desc="datasetparts"):
         
         recordings = []
-        
         supervisions = []
-        
         part_path = root_dir / part
-        
         futures = []
         
         for trans_path in tqdm(part_path.rglob("*.trans.txt"),desc="tpath",leave=False):
@@ -87,12 +84,8 @@ def prepare_corpora(
         #validate_recordings_and_supervisions(recording_set, supervision_set)
                 
         if output_dir is not None:
-            supervision_set.to_file(
-                output_dir / f"corpus_supervisions_{part}.jsonl.gz"
-            )
-            recording_set.to_file(
-                output_dir / f"corpus_recordings_{part}.jsonl.gz"
-            )
+            supervision_set.to_file(output_dir / f"corpus_supervisions_{part}.jsonl.gz")
+            recording_set.to_file(output_dir / f"corpus_recordings_{part}.jsonl.gz")
             
             gz_extract(f"corpus_supervisions_{part}.jsonl.gz")
             gz_extract(f"corpus_recordings_{part}.jsonl.gz")
