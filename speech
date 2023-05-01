@@ -1,4 +1,4 @@
-# hello world
+# Shalom World
 
 import lhotse, os, gzip, shutil
 from lhotse import CutSet, Mfcc, Fbank
@@ -15,10 +15,11 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 Pathlike = Union[Path, str]
 
 
-def gz_extract(*items):
-    for file in items:
-        gz_name = os.path.abspath(file)
+def gz_extract(*files):
+    for item in files:
+        gz_name = os.path.abspath(item) # full path of items
         file_name = (os.path.basename(gz_name)).rsplit('.',1)[0]
         with gzip.open(gz_name,"rb") as f_in, open(file_name,"wb") as f_out:
             shutil.copyfileobj(f_in, f_out)
         os.remove(gz_name)
+        
