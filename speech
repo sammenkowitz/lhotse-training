@@ -30,12 +30,13 @@ def prepare_corpora(
     ) -> Dict[str, Dict[str, Union[RecordingSet, SupervisionSet]]]:
 
     '''
-    Called with:
-    root_dir = Path("C:\\Users\\samme\\OneDrive\\Documents\\annotation_and_speech_corpora")
-    # num_jobs = os.cpu_count() - 1
-    output_dir = Path("C:\\Users\\samme\\OneDrive\\Documents\\annotation_and_speech_corpora")
+    ::Called with::
     
-    corpora = prepare_corpora(root_dir=root_dir, output_dir=output_dir,)
+        root_dir = Path("C:\\Users\\samme\\OneDrive\\Documents\\annotation_and_speech_corpora")
+        # num_jobs = os.cpu_count() - 1
+        output_dir = Path("C:\\Users\\samme\\OneDrive\\Documents\\annotation_and_speech_corpora")
+    
+        corpora = prepare_corpora(root_dir=root_dir, output_dir=output_dir,)
     '''
     
     root_dir = Path(root_dir)
