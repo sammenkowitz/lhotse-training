@@ -25,7 +25,7 @@ def gz_extract(*files):
         
 def prepare_corpora(
     root_dir: Pathlike,
-    dataset_parts: Union[str, Sequence[str]] = ("first", "second", "third"),
+    dataset_parts: Union[str, Sequence[str]],
     output_dir: Optional[Pathlike] = None
     ) -> Dict[str, Dict[str, Union[RecordingSet, SupervisionSet]]]:
 
@@ -36,7 +36,7 @@ def prepare_corpora(
         # num_jobs = os.cpu_count() - 1
         output_dir = Path("C:\\Users\\samme\\OneDrive\\Documents\\annotation_and_speech_corpora")
     
-        corpora = prepare_corpora(root_dir=root_dir, output_dir=output_dir,)
+        corpora = prepare_corpora(root_dir=root_dir, output_dir=output_dir,dataset_parts=['train'])
     '''
     
     root_dir = Path(root_dir)
