@@ -16,15 +16,8 @@ Pathlike = Union[Path, str]
 
 def prepare_corpora(root_dir, dataset_parts, out_dir = None):
     
-    '''
-    :param annotation: jsonl
-    :param audio: wav (or other audio)
-    :param supervisiondir: location of (supervision=jsonl)
-    :param recordingdir: location of (recording=jsonl, including path of cutaudio)
-    '''
-    
-    # if out_dir == None:
-        # supervisiondir = (dir of dir\\rootdir)
+    if out_dir == None:
+        out_dir = os.path.dirname(root_dir)
     
     root_dir = Path(root_dir) # (.strip) names of annotation and audio files carried over to out_dir
     output_dir = Path(output_dir)
