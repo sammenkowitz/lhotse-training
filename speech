@@ -13,33 +13,41 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 Pathlike = Union[Path, str]
 
+def parse_utterance():
 
 def prepare_corpora(root_dir, out_dir = None):
     
     if out_dir == None:
-        out_dir = root_dir # root_dir = out_dir = \train; \train\audio\0001... and \train\annotation\0001...
+        out_dir = root_dir # root_dir = out_dir = ...\train; \train\audio\0001... and \train\annotation\0001...
                            # -> \train\recording\0001... and \train\supervision\0001...    
     root_dir = Path(root_dir)
     out_dir = Path(out_dir)
     assert root_dir.is_dir(), f"No such directory: {root_dir}"
     assert out_dir.is_dir(), f"No such directory: {out_dir}"
     
-    '''
-    stems = ['0001','0007','0013']
-    '''
-    stems = ['0001']
+    stems = [] # stems replace {dataset_parts} by keeping .stem of audio, annotation
+    for filename in os.listdir(os.path.join(root_dir, 'annotation')):
+        f = Path(filename).stem.split('_')
+        stems.append(f[1])
+    print(stems)
+    
     for stem in stems:
         
         annotationdir = os.path.join(root_dir,f"annotation\\fla_{stem}.txt")
+        print(annotationdir)
         audiodir = os.path.join(root_dir,f"audio\\fla_{stem}.wav")        
+        print(audiodir)
         
         if not Path(os.path.join(out_dir,'supervison')).is_dir():
             os.mkdir(os.path.join(out_dir,'supervison'))
         supervisiondir = os.path.join(out_dir,f"supervison\\super_{stem}")
+        print(supervisiondir)
 
         if not Path(os.path.join(out_dir,'recording')).is_dir():
             os.mkdir(os.path.join(out_dir,'recording'))
         recordingdir = os.path.join(out_dir,f"recording\\rec_{stem}")
+        print(recordingdir)
+        
         '''    
         with open(recordingdir, 'w') as vice_manifest:
             sub = 0
@@ -62,7 +70,8 @@ def prepare_corpora(root_dir, out_dir = None):
 
             vice_manifest.write(str(recording))
             sub += 1
-        '''    
+        '''
+        
         with open(annotationdir, 'r', encoding='utf-8') as annotation_data:
 
             with open(supervisiondir, 'w', encoding='utf-8') as prime_manifest:
