@@ -14,36 +14,73 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 Pathlike = Union[Path, str]
 
 
-def prepare_corpora(root_dir, dataset_parts, out_dir = None):
+def prepare_corpora(root_dir, out_dir = None):
     
     if out_dir == None:
-        out_dir = os.path.dirname(root_dir)
-    
-    root_dir = Path(root_dir) # (.strip) names of annotation and audio files carried over to out_dir
-    output_dir = Path(output_dir)
+        out_dir = root_dir # root_dir = out_dir = \train; \train\audio\0001... and \train\annotation\0001...
+                           # -> \train\recording\0001... and \train\supervision\0001...    
+    root_dir = Path(root_dir)
+    out_dir = Path(out_dir)
     assert root_dir.is_dir(), f"No such directory: {root_dir}"
-    assert output_dir.is_dir(), f"No such directory: {output_dir}"
+    assert out_dir.is_dir(), f"No such directory: {out_dir}"
     
-    with open(annotation, 'r', encoding='utf-8') as annotation_data:
+    '''
+    stems = ['0001','0007','0013']
+    '''
+    stems = ['0001']
+    for stem in stems:
         
-        with open(supervisiondir, 'w', encoding='utf-8') as prime_manifest:
+        annotationdir = os.path.join(root_dir,f"annotation\\fla_{stem}.txt")
+        audiodir = os.path.join(root_dir,f"audio\\fla_{stem}.wav")        
+        
+        if not Path(os.path.join(out_dir,'supervison')).is_dir():
+            os.mkdir(os.path.join(out_dir,'supervison'))
+        supervisiondir = os.path.join(out_dir,f"supervison\\super_{stem}")
+
+        if not Path(os.path.join(out_dir,'recording')).is_dir():
+            os.mkdir(os.path.join(out_dir,'recording'))
+        recordingdir = os.path.join(out_dir,f"recording\\rec_{stem}")
+        '''    
+        with open(recordingdir, 'w') as vice_manifest:
             sub = 0
-            for line in annotation_data:        
-                line = line.split('\t')
-                line[0] = line[0].split(' ')
+            # must parse audio and iterate through cuts
 
-                supervision = {}
-                supervision['id'] = Path(annotation).stem + f"-cut_{sub}"
-                supervision['recording_id'] = Path(audio).stem
-                supervision['start'] = 0.0
-                supervision['duration'] = float(line[0][1]) - float(line[0][0])
-                supervision['channel'] = 0
-                supervision['text'] = line[1]
-                supervision['language'] = 'Arabic'
-                supervision['speaker'] = line[0][2]
+            audiodir = Path(audiodir)
+            recording_id = audiodir.stem
+            audio_info = info(audiodir)
 
-                prime_manifest.write(str(supervision))
-                sub += 1
-    
-#    with open() as :
-#        with open() as vice_manifest:
+            recording = {}
+            recording['id'] = recording_id
+            recording['sources'] = [AudioSource(
+                        type="file",
+                        channels=list(range(audio_info.channels)),
+                        source=(str(audiodir)),
+            )]
+            recording['sampling_rate'] = audio_info.samplerate
+            recording['num_samples'] = audio_info.frames
+            recording['duration'] = audio_info.duration
+
+            vice_manifest.write(str(recording))
+            sub += 1
+        '''    
+        with open(annotationdir, 'r', encoding='utf-8') as annotation_data:
+
+            with open(supervisiondir, 'w', encoding='utf-8') as prime_manifest:
+                sub = 0
+                for line in annotation_data.readline():
+                    line = line.split('\t')
+                    line[0] = line[0].split(' ')
+                    print(line)
+
+                    supervision = {}
+                    supervision['id'] = Path(annotationdir).stem + f"-cut_{sub}"
+                    supervision['recording_id'] = Path(audio).stem
+                    supervision['start'] = 0.0
+                    supervision['duration'] = float(line[0][1]) - float(line[0][0])
+                    supervision['channel'] = 0
+                    supervision['text'] = line[1]
+                    supervision['language'] = 'Arabic'
+                    supervision['speaker'] = line[0][2]
+
+                    prime_manifest.write(str(supervision))
+                    sub += 1
