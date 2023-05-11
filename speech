@@ -29,24 +29,19 @@ def prepare_corpora(root_dir, out_dir = None):
     for filename in os.listdir(os.path.join(root_dir, 'annotation')):
         f = Path(filename).stem.split('_')
         stems.append(f[1])
-    print(stems)
-    
+        
     for stem in stems:
         
         annotationdir = os.path.join(root_dir,f"annotation\\fla_{stem}.txt")
-        print(annotationdir)
         audiodir = os.path.join(root_dir,f"audio\\fla_{stem}.wav")        
-        print(audiodir)
         
         if not Path(os.path.join(out_dir,'supervison')).is_dir():
             os.mkdir(os.path.join(out_dir,'supervison'))
-        supervisiondir = os.path.join(out_dir,f"supervison\\super_{stem}")
-        print(supervisiondir)
+        supervisiondir = os.path.join(out_dir,f"supervison\\super_{stem}.jsonl")
 
         if not Path(os.path.join(out_dir,'recording')).is_dir():
             os.mkdir(os.path.join(out_dir,'recording'))
-        recordingdir = os.path.join(out_dir,f"recording\\rec_{stem}")
-        print(recordingdir)
+        recordingdir = os.path.join(out_dir,f"recording\\rec_{stem}.jsonl")
         
         '''    
         with open(recordingdir, 'w') as vice_manifest:
@@ -76,20 +71,21 @@ def prepare_corpora(root_dir, out_dir = None):
 
             with open(supervisiondir, 'w', encoding='utf-8') as prime_manifest:
                 sub = 0
-                for line in annotation_data.readline():
-                    line = line.split('\t')
-                    line[0] = line[0].split(' ')
-                    print(line)
+                for line in annotation_data.read().split('\n'):
+                    if line != '':
+                        line = line.split('\t')
+                        line[0] = line[0].split(' ')
+                    
+                        supervision = {}
+                        supervision['id'] = Path(annotationdir).stem + f"-cut_{sub}"
+                        supervision['recording_id'] = Path(audiodir).stem
+                        supervision['start'] = 0.0
+                        supervision['duration'] = float(line[0][1]) - float(line[0][0])
+                        supervision['channel'] = 0
+                        supervision['text'] = line[1]
+                        supervision['text_english'] = line[2]
+                        supervision['language'] = 'Arabic'
+                        supervision['speaker'] = line[0][2]
 
-                    supervision = {}
-                    supervision['id'] = Path(annotationdir).stem + f"-cut_{sub}"
-                    supervision['recording_id'] = Path(audio).stem
-                    supervision['start'] = 0.0
-                    supervision['duration'] = float(line[0][1]) - float(line[0][0])
-                    supervision['channel'] = 0
-                    supervision['text'] = line[1]
-                    supervision['language'] = 'Arabic'
-                    supervision['speaker'] = line[0][2]
-
-                    prime_manifest.write(str(supervision))
-                    sub += 1
+                        prime_manifest.write(str(supervision))
+                        sub += 1
