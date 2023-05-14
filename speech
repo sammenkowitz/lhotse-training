@@ -3,7 +3,7 @@
 import lhotse, os, gzip, shutil
 from lhotse import CutSet, Mfcc, Fbank
 import lhotse.recipes
-from lhotse.audio import Recording, RecordingSet
+from lhotse.audio import Recording, RecordingSet, info, audioread_info
 from lhotse.recipes.utils import manifests_exist, read_manifests_if_cached
 from lhotse.supervision import AlignmentItem, SupervisionSegment, SupervisionSet
 
@@ -13,7 +13,31 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 Pathlike = Union[Path, str]
 
-def parse_utterance():
+def parse_sound(audiodir, recordingdir):
+    
+    with open(recordingdir, 'w') as vice_manifest:
+        
+        rsub = 0
+        
+        # must parse audio and iterate through cuts
+        # each {recording} line gets a unique source path
+
+        audiodir = Path(audiodir)
+        recording_id = audiodir.stem
+        audio_info = info(audiodir)
+
+        recording = {}
+        recording['id'] = recording_id
+        recording['sources'] = {}
+        recording['sources']['type'] = 'file'
+        recording['sources']['channels'] = list(range(audio_info.channels))
+        recording['sources']['source'] = str(audiodir) + f"-cut_{sub}"
+        recording['sampling_rate'] = audio_info.samplerate
+        recording['num_samples'] = audio_info.frames
+        recording['duration'] = audio_info.duration
+
+        vice_manifest.write(str(recording))
+        rsub += 1
 
 def prepare_corpora(root_dir, out_dir = None):
     
@@ -30,47 +54,22 @@ def prepare_corpora(root_dir, out_dir = None):
         f = Path(filename).stem.split('_')
         stems.append(f[1])
         
+    if not Path(os.path.join(out_dir,'supervison')).is_dir():
+        os.mkdir(os.path.join(out_dir,'supervison'))
+    if not Path(os.path.join(out_dir,'recording')).is_dir():
+        os.mkdir(os.path.join(out_dir,'recording'))
+        
     for stem in stems:
         
         annotationdir = os.path.join(root_dir,f"annotation\\fla_{stem}.txt")
         audiodir = os.path.join(root_dir,f"audio\\fla_{stem}.wav")        
-        
-        if not Path(os.path.join(out_dir,'supervison')).is_dir():
-            os.mkdir(os.path.join(out_dir,'supervison'))
         supervisiondir = os.path.join(out_dir,f"supervison\\super_{stem}.jsonl")
-
-        if not Path(os.path.join(out_dir,'recording')).is_dir():
-            os.mkdir(os.path.join(out_dir,'recording'))
         recordingdir = os.path.join(out_dir,f"recording\\rec_{stem}.jsonl")
-        
-        '''    
-        with open(recordingdir, 'w') as vice_manifest:
-            sub = 0
-            # must parse audio and iterate through cuts
-
-            audiodir = Path(audiodir)
-            recording_id = audiodir.stem
-            audio_info = info(audiodir)
-
-            recording = {}
-            recording['id'] = recording_id
-            recording['sources'] = [AudioSource(
-                        type="file",
-                        channels=list(range(audio_info.channels)),
-                        source=(str(audiodir)),
-            )]
-            recording['sampling_rate'] = audio_info.samplerate
-            recording['num_samples'] = audio_info.frames
-            recording['duration'] = audio_info.duration
-
-            vice_manifest.write(str(recording))
-            sub += 1
-        '''
         
         with open(annotationdir, 'r', encoding='utf-8') as annotation_data:
 
             with open(supervisiondir, 'w', encoding='utf-8') as prime_manifest:
-                sub = 0
+                ssub = 0
                 for line in annotation_data.read().split('\n'):
                     if line != '':
                         line = line.split('\t')
@@ -88,4 +87,6 @@ def prepare_corpora(root_dir, out_dir = None):
                         supervision['speaker'] = line[0][2]
 
                         prime_manifest.write(str(supervision))
-                        sub += 1
+                        ssub += 1
+        
+        parse_sound(audiodir, recordingdir)
