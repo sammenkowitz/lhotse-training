@@ -3,7 +3,7 @@
 import lhotse, os, gzip, shutil
 from lhotse import CutSet, Mfcc, Fbank
 import lhotse.recipes
-from lhotse.audio import Recording, RecordingSet, info, audioread_info
+from lhotse.audio import Recording, RecordingSet
 from lhotse.recipes.utils import manifests_exist, read_manifests_if_cached
 from lhotse.supervision import AlignmentItem, SupervisionSegment, SupervisionSet
 
