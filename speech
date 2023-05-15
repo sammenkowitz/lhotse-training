@@ -36,7 +36,7 @@ def prepare_corpora(root_dir, out_dir = None):
     for stem in stems:
         
         annotationdir = os.path.join(root_dir,f"annotation\\fla_{stem}.txt")
-        audiodir = os.path.join(root_dir,f"audio\\fla_{stem}.wav")        
+        audiodir = os.path.join(root_dir,f"audio\\fla_{stem}.sph")        
         supervisiondir = os.path.join(out_dir,f"supervison\\super_{stem}.jsonl")
         recordingdir = os.path.join(out_dir,f"recording\\rec_{stem}.jsonl")
         
