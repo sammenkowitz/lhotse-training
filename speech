@@ -13,69 +13,82 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 Pathlike = Union[Path, str]
 
-def prepare_corpora(root_dir, out_dir = None):
+def prepare_corpora(root_dir, out_dir = None, sessions = None):
     
+    
+    '''
+    root_dir = train:
+        annotationdir:
+            'C:...\\annotation_and_speech_corpora\\train\\annotation\\fla_0001.txt'
+            'C:...\\annotation_and_speech_corpora\\train\\annotation\\fla_0007.txt'
+            'C:...\\annotation_and_speech_corpora\\train\\annotation\\fla_0013.txt'
+        audiodir:
+            'C:...\\annotation_and_speech_corpora\\train\\audio\\fla_0001.sph'
+            'C:...\\annotation_and_speech_corpora\\train\\audio\\fla_0007.sph'
+            'C:...\\annotation_and_speech_corpora\\train\\audio\\fla_0013.sph'
+    out_dir = train:    
+        supervisionsdir:
+            'C:...\\annotation_and_speech_corpora\\train\\supervisions\\supervision'
+            'C:...\\annotation_and_speech_corpora\\train\\supervisions\\recording'
+    '''
+    
+    
+    # out_dir defaults to root_dir
     if out_dir == None:
-        out_dir = root_dir # root_dir = out_dir = ...\train; \train\audio\0001... and \train\annotation\0001...
-                           # -> \train\recording\0001... and \train\supervision\0001...    
-    root_dir = Path(root_dir)
-    out_dir = Path(out_dir)
-    assert root_dir.is_dir(), f"No such directory: {root_dir}"
-    assert out_dir.is_dir(), f"No such directory: {out_dir}"
+        out_dir = root_dir
+    else:
+        assert out_dir.is_dir(), f"No such directory: {out_dir}"
     
-    stems = [] # stems replace {dataset_parts} by keeping .stem of audio, annotation
-    for filename in os.listdir(os.path.join(root_dir, 'annotation')):
-        f = Path(filename).stem.split('_')
-        stems.append(f[1])
-        
-    if not Path(os.path.join(out_dir,'supervison')).is_dir():
-        os.mkdir(os.path.join(out_dir,'supervison'))
-    if not Path(os.path.join(out_dir,'recording')).is_dir():
-        os.mkdir(os.path.join(out_dir,'recording'))
-        
-    for stem in stems:
-        
-        annotationdir = os.path.join(root_dir,f"annotation\\fla_{stem}.txt")
-        audiodir = os.path.join(root_dir,f"audio\\fla_{stem}.sph")        
-        supervisiondir = os.path.join(out_dir,f"supervison\\super_{stem}.jsonl")
-        recordingdir = os.path.join(out_dir,f"recording\\rec_{stem}.jsonl")
-        
-        with open(annotationdir, 'r', encoding='utf-8') as annotation_data:
+    root_dir = Path(root_dir)
+    assert root_dir.is_dir(), f"No such directory: {root_dir}"
+    out_dir = Path(out_dir)
+    
+    # dir is full path
+    annotationdir = os.path.join(root_dir,'annotation')
+    audiodir = os.path.join(root_dir,'audio')
+    supervisionsdir = Path(os.path.join(out_dir,'supervisons'))
+    if not supervisionsdir.is_dir():
+        os.mkdir(supervisionsdir)
 
-            with open(supervisiondir, 'w', encoding='utf-8') as prime_manifest:
-                with open(recordingdir, 'w') as vice_manifest:
+    # channel_to_int = {"A": 0, "B": 1}
+    session_id = root_dir.stem.split("_")[-1]
+        
+    with open(os.path.join(supervisionsdir,'supervison'), 'w', encoding='utf-8') as prime_manifest:
+        with open(os.path.join(supervisionsdir,'recording'), 'w') as vice_manifest:
+
+            for annotation in os.listdir(annotationdir): # iterates through annotation files
+                annotation = os.path.join(annotationdir, annotation)
+                for audio in os.listdir(audiodir): # iterates through audio files
+                    audio = os.path.join(audiodir, audio)
+                
+                with open(annotation, 'r', encoding='utf-8') as annotation_data:
                     sub = 0
-
-                    audiodir = Path(audiodir)
-                    recording_id = audiodir.stem
-                    # audio_info = info(audiodir)
-
-                    for line in annotation_data.read().split('\n'):
+                    for line in annotation_data.read().split('\n'): # iterates through cuts in annotation
                         if line != '':
                             line = line.split('\t')
                             line[0] = line[0].split(' ')
-
+                                                        
                             supervision = {}
-                            supervision['id'] = Path(annotationdir).stem + f"-cut_{sub}"
-                            supervision['recording_id'] = Path(audiodir).stem
+                            supervision['id'] = Path(annotation).stem + f"-cut_{sub}"
+                            supervision['recording_id'] = Path(audio).stem
                             supervision['start'] = float(line[0][0])
                             supervision['duration'] = round(float(line[0][1]) - float(line[0][0]), 3)
-                            supervision['channel'] = 0
+                            supervision['channel'] = "B" if line[0][2] else "A"
                             supervision['text'] = line[1]
                             supervision['text_english'] = line[2]
                             supervision['language'] = 'Arabic'
-                            supervision['speaker'] = line[0][2]
+                            supervision['speaker'] = sessions[session_id][line[2]] if sessions else line[0][2]
                             prime_manifest.write(str(supervision))
 
-                            recording = {}
-                            recording['id'] = recording_id
-                            recording['sources'] = {}
-                            recording['sources']['type'] = 'file'
-                            recording['sources']['channels'] = [0]
-                            recording['sources']['source'] = str(audiodir)
-                            recording['sampling_rate'] = None
-                            recording['num_samples'] = None
-                            recording['duration'] = round(float(line[0][1]) - float(line[0][0]), 3)
-                            vice_manifest.write(str(recording))
-
                             sub += 1
+                    
+                    recording = {}
+                    recording['id'] = Path(audio).stem
+                    recording['sources'] = {}
+                    recording['sources']['type'] = 'file'
+                    recording['sources']['channels'] = []
+                    recording['sources']['source'] = str(audio)
+                    recording['sampling_rate'] = None
+                    recording['num_samples'] = None
+                    recording['duration'] = 20.23 # this is the duration of the sph file
+                    vice_manifest.write(str(recording))
